@@ -1,0 +1,146 @@
+{
+ "run": "vit_real_syn_s2",
+ "arch": "vit_small",
+ "timm_name": "vit_small_patch16_224.augreg_in21k_ft_in1k",
+ "synthetic_frac": 1.0,
+ "augment": true,
+ "train_images": {
+  "places365": 360,
+  "synthetic": 601
+ },
+ "epochs": 15,
+ "lr": 0.0001,
+ "best_val_macro_f1": 0.889173155357805,
+ "train_minutes": 7.37,
+ "params_millions": 21.67,
+ "latency_ms_batch1": 4.09,
+ "device": "NVIDIA GeForce RTX 5070 Laptop GPU",
+ "test": {
+  "n": 150,
+  "accuracy": 0.8933333333333333,
+  "macro_f1": 0.8916426710544357,
+  "indoor_outdoor_accuracy": 0.9933333333333333,
+  "per_class_f1": {
+   "bedroom": 0.9803921568627451,
+   "kitchen": 0.8888888888888888,
+   "office": 0.8181818181818182,
+   "park": 0.8846153846153846,
+   "parking_lot": 0.8888888888888888,
+   "street": 0.8888888888888888
+  },
+  "confusion_matrix": [
+   [
+    25,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    24,
+    1,
+    0,
+    0,
+    0
+   ],
+   [
+    1,
+    5,
+    18,
+    0,
+    1,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    23,
+    2,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    1,
+    24,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    3,
+    2,
+    20
+   ]
+  ]
+ },
+ "own_test": {
+  "n": 79,
+  "accuracy": 0.9746835443037974,
+  "macro_f1": 0.9691850594227504,
+  "indoor_outdoor_accuracy": 0.9873417721518988,
+  "per_class_f1": {
+   "bedroom": 1.0,
+   "kitchen": 1.0,
+   "office": 0.9473684210526315,
+   "park": 0.967741935483871,
+   "parking_lot": 0.9,
+   "street": 1.0
+  },
+  "confusion_matrix": [
+   [
+    20,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    11,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    9,
+    0,
+    1,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    15,
+    1,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    9,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    13
+   ]
+  ]
+ }
+}

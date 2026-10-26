@@ -1,0 +1,9 @@
+# Extra packages for scripts/generate_maskgen.py (TA-TiTok + MaskGen, bytedance/1d-tokenizer)
+open_clip_torch
+omegaconf
+einops
+diffusers
+transformers
+huggingface_hub
+accelerate
+scipy

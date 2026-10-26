@@ -1,0 +1,15 @@
+# environments
+.venv/
+.venv-*/
+venv/
+
+# data, downloaded models and the MaskGen repo (recreated by the scripts)
+data/
+external/
+runs/**/*.pt
+
+# python / tool caches
+__pycache__/
+*.pyc
+.gradio/
+*.log
