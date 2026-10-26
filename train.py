@@ -141,6 +141,7 @@ def main():
     ap.add_argument("--run", required=True)
     ap.add_argument("--synthetic-frac", type=float, default=0.0, help="share of generated images to add (0 = real only)")
     ap.add_argument("--no-aug", action="store_true")
+    ap.add_argument("--filter-synthetic", action="store_true", help="drop synthetic images rejected by scripts/filter_synthetic.py")
     ap.add_argument("--epochs", type=int, default=15)
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument("--lr", type=float, default=None, help="default 5e-4 (resnet) / 1e-4 (vit)")
@@ -163,7 +164,7 @@ def main():
     tf_eval = build_transforms(meta["mean"], meta["std"], size, train=False)
 
     real_train = read_rows("train")
-    syn = synthetic_rows(args.synthetic_frac, seed=args.seed)
+    syn = synthetic_rows(args.synthetic_frac, seed=args.seed, drop_rejected=args.filter_synthetic)
     train_rows = real_train + syn
     if args.limit:
         random.Random(args.seed).shuffle(train_rows)
@@ -211,6 +212,7 @@ def main():
         "timm_name": meta["timm_name"],
         "synthetic_frac": args.synthetic_frac,
         "augment": not args.no_aug,
+        "synthetic_filtered": args.filter_synthetic,
         "train_images": dict(counts),
         "epochs": args.epochs,
         "lr": lr,

@@ -14,7 +14,7 @@ python scripts/generate_maskgen.py --weights-from runs/baseline_resnet18/metrics
 
 # 4. SOTA classifier + ablations
 python train.py --arch vit_small --run vit_real                                   # ViT, real only
-python train.py --arch vit_small --run vit_real_syn   --synthetic-frac 1.0        # ViT + all synthetic (final model)
+python train.py --arch vit_small --run vit_real_syn   --synthetic-frac 1.0        # ViT + all synthetic (unfiltered)
 python train.py --arch vit_small --run vit_real_syn50 --synthetic-frac 0.5        # ablation: half the synthetic set
 python train.py --arch vit_small --run vit_real_syn_noaug --synthetic-frac 1.0 --no-aug   # ablation: no augmentation
 
@@ -24,8 +24,15 @@ for seed in 1 2; do
   python train.py --arch vit_small --run vit_real_syn_s$seed --synthetic-frac 1.0 --seed $seed
 done
 
-# 6. Report tables and figures -> figures/
+# 6. Quality-filter the synthetic images, then train the final model (3 seeds)
+python scripts/filter_synthetic.py
+python train.py --arch vit_small --run vit_real_synf --synthetic-frac 1.0 --filter-synthetic   # final model
+for seed in 1 2; do
+  python train.py --arch vit_small --run vit_real_synf_s$seed --synthetic-frac 1.0 --filter-synthetic --seed $seed
+done
+
+# 7. Report tables and figures -> figures/
 python make_figures.py
 
-# 7. Demo app
+# 8. Demo app
 python app.py

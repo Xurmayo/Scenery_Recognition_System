@@ -16,7 +16,10 @@ Six scene classes: **bedroom, kitchen, office** (indoor) and **park, parking lot
 ## Highlights
 
 - **ViT-S/16 beats the ResNet-18 baseline by about 10 points** on both the Places365 test set and the in-the-wild set.
-- **Synthetic data improves hard real-world photos:** in-the-wild macro-F1 0.925 → 0.961 (mean of 3 seeds).
+- **Quality-filtered synthetic data helps on both test sets:** in-the-wild macro-F1 0.925 → 0.962 and Places365 accuracy
+  0.907 → 0.918 (means of 3 seeds) over the real-only ViT.
+- **Synthetic-data quality filter:** a real-only classifier rejects generated images that don't look like their class
+  (40 of 601), exposing ambiguous prompts such as "corporate office with glass walls" (16 of 21 drawn as street).
 - **Targeted synthetic data:** MaskGen generates 600 scenes in hard conditions (night, snow, rain, backlight, odd angles),
   and classes the baseline was worst at get more images.
 - **Honest evaluation:** test sets contain only real photos, the key runs are repeated over 3 seeds, and results are
@@ -31,7 +34,9 @@ Six scene classes: **bedroom, kitchen, office** (indoor) and **park, parking lot
 Places365 (6 classes) ──► ResNet-18 baseline ──► per-class F1 ──► MaskGen prompt budget
         │                                                             │
         │                     TA-TiTok + MaskGen-L (text → image) ◄────┘
-        │                                  │  600 synthetic scenes (night, snow, rain, ...)
+        │                                  │  601 synthetic scenes (night, snow, rain, ...)
+        │                                  ▼
+        │                     quality filter (real-only ViT) ──► 561 kept, 40 rejected
         ▼                                  ▼
    real train set ─────────────► ViT-S/16 fine-tuning ──► evaluation on REAL images only
                                                             ├─ Places365 test (150)
@@ -61,35 +66,51 @@ photos and web images (test-only, never trained on), with many in hard condition
 |---|---|---|---|---|---|---|---|---|
 | `baseline_resnet18` | ResNet-18 | — | ✓ | 0.813 | 0.811 | 0.797 | 0.792 | 4.1 ms |
 | `vit_real` | ViT-S/16 | — | ✓ | **0.913** | **0.913** | 0.924 | 0.905 | 3.9 ms |
-| `vit_real_syn` (final) | ViT-S/16 | 100% | ✓ | 0.893 | 0.893 | **0.975** | **0.969** | 4.0 ms |
+| `vit_real_syn` | ViT-S/16 | 100% | ✓ | 0.893 | 0.893 | **0.975** | 0.969 | 4.0 ms |
+| `vit_real_synf` (final) | ViT-S/16 | 100%, filtered | ✓ | 0.907 | 0.907 | **0.975** | **0.970** | 5.1 ms |
 | `vit_real_syn50` | ViT-S/16 | 50% | ✓ | 0.887 | 0.887 | 0.949 | 0.936 | 4.1 ms |
 | `vit_real_syn_noaug` | ViT-S/16 | 100% | ✗ | 0.867 | 0.865 | 0.949 | 0.936 | 4.1 ms |
 
 Latency is batch-1 inference on an NVIDIA GeForce RTX 5070 Laptop GPU. The final model gets 77 of 79 in-the-wild
 images right (real-only ViT: 73, baseline: 63).
 
-### Effect of synthetic data (mean ± std over 3 seeds)
+### Synthetic data, unfiltered vs filtered (mean ± std over 3 seeds)
 
 | Config | Test acc | Test macro-F1 | In-the-wild acc | In-the-wild F1 |
 |---|---|---|---|---|
 | ViT, real only | 0.907 ± 0.014 | 0.906 ± 0.015 | 0.937 ± 0.018 | 0.925 ± 0.020 |
-| ViT + synthetic | 0.902 ± 0.013 | 0.901 ± 0.013 | **0.966 ± 0.012** | **0.961 ± 0.012** |
+| ViT + synthetic | 0.902 ± 0.013 | 0.901 ± 0.013 | 0.966 ± 0.012 | 0.961 ± 0.012 |
+| ViT + filtered synthetic (final) | **0.918 ± 0.011** | **0.917 ± 0.011** | **0.966 ± 0.022** | **0.962 ± 0.023** |
+
+### Synthetic-data quality filter
+
+`scripts/filter_synthetic.py` classifies every generated image with the real-only ViT (it never saw synthetic data, so
+the check is not circular) and rejects images whose intended class gets a probability below 0.2.
+40 of 601 images (6.7%) were rejected, almost all from four ambiguous prompts:
+
+| Prompt | Rejected | What MaskGen drew instead |
+|---|---|---|
+| "a corporate office with glass walls" | 16 / 21 | the outside of a glass building (→ street) |
+| "a wide avenue with traffic lights" | 12 / 21 | traffic lights over open asphalt (→ parking lot) |
+| "a residential street with parked cars" | 6 / 21 | rows of parked cars (→ parking lot) |
+| "a supermarket parking lot with shopping carts" | 4 / 18 | mostly the store building (→ office / street) |
+
+Bedroom, kitchen and park images were essentially all on-class.
 
 ### What the results show
 
 - **The architecture is the biggest win.** The ViT, pretrained on ImageNet-21k, improves on the baseline by about
   10 points on both test sets, far beyond seed-to-seed noise.
 - **Synthetic data helps where it was aimed: hard real-world photos.** On the in-the-wild set (night, snow, rain,
-  unusual angles), synthetic data adds +2.9 accuracy and +3.6 macro-F1 on average, larger than the run-to-run spread;
-  every synthetic run scores at least as high as two of the three real-only runs. With only 3 seeds the difference is
-  not yet significant at the 5% level (Welch's t-test, p ≈ 0.12), so it is a consistent trend rather than a proven
-  effect.
-- **On the clean Places365 test set, synthetic data makes no difference** (−0.5 points, p ≈ 0.75). These are ordinary
-  daytime photos, the same distribution as the real training data, so there is no gap for synthetic data to fill.
-- **Prompt quality matters.** In a first generation round, two parking-lot prompts ("rooftop parking lot", "parking lot
-  behind apartment blocks") produced empty streets between buildings, which fed the street ↔ parking-lot confusion.
-  After replacing them, the in-the-wild F1 gain from synthetic data doubled (+1.7 → +3.6 points). Checking and filtering
-  generated data is as important as generating it.
+  unusual angles), synthetic data adds about +3 accuracy and +3.7 macro-F1 on average.
+- **Unfiltered synthetic data slightly hurts the clean test set** (−0.5 points): off-class images, such as glass office
+  buildings labelled "office", teach wrong cues. **Filtering them fixes this:** the filtered model is the best on the
+  clean test set (+1.1 points over real-only) *and* keeps the full in-the-wild gain.
+- **Prompt quality matters as much as quantity.** An earlier generation round with two bad parking-lot prompts gave only
+  half the in-the-wild gain; replacing those prompts and then filtering produced the final result.
+- **Statistical caution:** with 3 seeds per configuration none of the synthetic-data gains are significant at the 5%
+  level (Welch's t-test: in-the-wild F1 p ≈ 0.16, test accuracy p ≈ 0.44). They are consistent trends across seeds,
+  not proven effects; more seeds or a larger test set would be needed to confirm them.
 - **Augmentation matters:** without it, test accuracy drops to 0.867, and `street → parking lot` errors rise from 3 to 5.
 - **Hard pairs:** street ↔ parking lot (cars and asphalt) and office ↔ kitchen (counters, desks, appliances).
 - **Seed noise is large:** the same configuration ranges from 0.887 to 0.920 test accuracy, so single-run comparisons
@@ -143,6 +164,10 @@ python train.py --arch vit_small --run vit_real_s1 --seed 1             # extra 
 python train.py --arch vit_small --run vit_real_s2 --seed 2
 python train.py --arch vit_small --run vit_real_syn_s1 --synthetic-frac 1.0 --seed 1
 python train.py --arch vit_small --run vit_real_syn_s2 --synthetic-frac 1.0 --seed 2
+python scripts/filter_synthetic.py                                      # quality check of synthetic images
+python train.py --arch vit_small --run vit_real_synf --synthetic-frac 1.0 --filter-synthetic   # final model
+python train.py --arch vit_small --run vit_real_synf_s1 --synthetic-frac 1.0 --filter-synthetic --seed 1
+python train.py --arch vit_small --run vit_real_synf_s2 --synthetic-frac 1.0 --filter-synthetic --seed 2
 python make_figures.py                                                  # tables + figures -> figures/
 ```
 
@@ -160,6 +185,7 @@ make_figures.py              all tables and figures in figures/
 config.py                    classes, paths, model names
 scripts/prepare_data.py      Places365 subset + own photos -> data/manifest.csv
 scripts/generate_maskgen.py  TA-TiTok + MaskGen synthetic scene generation
+scripts/filter_synthetic.py  quality check: rejects synthetic images that don't look like their class
 src/data.py                  datasets and augmentation
 src/models.py                model creation, checkpoints
 src/explain.py               Grad-CAM (CNN and ViT), attention rollout

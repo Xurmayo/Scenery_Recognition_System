@@ -17,5 +17,10 @@ python train.py --arch vit_small --run vit_real_s2 --seed 2 || exit /b 1
 python train.py --arch vit_small --run vit_real_syn_s1 --synthetic-frac 1.0 --seed 1 || exit /b 1
 python train.py --arch vit_small --run vit_real_syn_s2 --synthetic-frac 1.0 --seed 2 || exit /b 1
 
+python scripts\filter_synthetic.py || exit /b 1
+python train.py --arch vit_small --run vit_real_synf --synthetic-frac 1.0 --filter-synthetic || exit /b 1
+python train.py --arch vit_small --run vit_real_synf_s1 --synthetic-frac 1.0 --filter-synthetic --seed 1 || exit /b 1
+python train.py --arch vit_small --run vit_real_synf_s2 --synthetic-frac 1.0 --filter-synthetic --seed 2 || exit /b 1
+
 python make_figures.py || exit /b 1
 python app.py

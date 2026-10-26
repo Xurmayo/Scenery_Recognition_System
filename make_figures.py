@@ -53,7 +53,7 @@ def results_table(runs):
         ti = m["train_images"]
         own = m.get("own_test")
         lines.append([
-            name, m["arch"], f"{m['synthetic_frac']:.0%}", "yes" if m["augment"] else "no",
+            name, m["arch"], f"{m['synthetic_frac']:.0%}" + (" (filtered)" if m.get("synthetic_filtered") else ""), "yes" if m["augment"] else "no",
             f"{ti.get('places365', 0)}+{ti.get('synthetic', 0)}",
             f"{m['test']['accuracy']:.3f}", f"{m['test']['macro_f1']:.3f}", f"{m['test']['indoor_outdoor_accuracy']:.3f}",
             f"{own['accuracy']:.3f}" if own else "-", f"{own['macro_f1']:.3f}" if own else "-",
@@ -242,7 +242,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline", default="baseline_resnet18")
     ap.add_argument("--real", default="vit_real")
-    ap.add_argument("--sota", default="vit_real_syn")
+    ap.add_argument("--sota", default="vit_real_synf")
     args = ap.parse_args()
     FIG_DIR.mkdir(exist_ok=True)
 

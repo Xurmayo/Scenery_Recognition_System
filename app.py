@@ -121,7 +121,14 @@ def synth_rows():
     if not SYNTH_META.exists():
         return []
     with open(SYNTH_META) as f:
-        return [r for r in csv.DictReader(f) if r["label"] in CLASSES and (ROOT / r["path"]).exists()]
+        rows = [r for r in csv.DictReader(f) if r["label"] in CLASSES and (ROOT / r["path"]).exists()]
+    q = SYNTH_META.parent / "synthetic_quality.csv"
+    if q.exists():
+        with open(q) as f:
+            verdict = {r["path"]: r["quality"] for r in csv.DictReader(f)}
+        for r in rows:
+            r["quality"] = verdict.get(r["path"], "")
+    return rows
 
 
 def most_confused_with(cls):
@@ -137,24 +144,32 @@ def most_confused_with(cls):
     return None
 
 
-def complementary(cls, n=8):
-    rows = SYNTH
-    if not rows:
-        return [], "No synthetic images yet. Run `python scripts/generate_maskgen.py` first."
+def synth_caption(r):
+    return r["prompt"].removeprefix("A photo of ").rstrip(".")
+
+
+def synth_gallery(cls, n):
+    pool = [r for r in SYNTH if r["label"] == cls]
+    good = [r for r in pool if r.get("quality") != "reject"]  # hide images the quality check flagged
+    pool = good or pool
+    random.shuffle(pool)
+    return [(stamp_synthetic(load_image(ROOT / r["path"])), synth_caption(r)) for r in pool[:n]]
+
+
+def complementary(cls, n=4):
+    if not SYNTH:
+        msg = "No synthetic images yet. Run `python scripts/generate_maskgen.py` first."
+        return [], [], msg, "", ""
     if not cls:
         cls = random.choice(CLASSES)
     confused = most_confused_with(cls)
-    pool = [r for r in rows if r["label"] == cls]
-    random.shuffle(pool)
-    pick = pool[: n // 2 if confused else n]
-    if confused:
-        pool2 = [r for r in rows if r["label"] == confused]
-        random.shuffle(pool2)
-        pick += pool2[: n - len(pick)]
-    gallery = [(stamp_synthetic(load_image(ROOT / r["path"])), f"[{r['label']}] {r['prompt']}") for r in pick]
-    note = (f"Complementary scenes for **{cls}**" + (f" and the class it is most confused with, **{confused}**" if confused else "")
-            + ". All images were generated offline with TA-TiTok + MaskGen and are **AI-generated, not real photos**.")
-    return gallery, note
+    nice = lambda c: c.replace("_", " ")
+    note = ("All images below were generated offline with TA-TiTok + MaskGen and are **AI-generated, not real photos**. "
+            "They are training data, not predictions.")
+    head1 = f"### Synthetic **{nice(cls)}** scenes"
+    head2 = (f"### Synthetic **{nice(confused)}** scenes, the class the model most often confuses with {nice(cls)}"
+             if confused else "")
+    return synth_gallery(cls, n), (synth_gallery(confused, n) if confused else []), note, head1, head2
 
 
 def results_md():
@@ -207,14 +222,17 @@ def build_ui():
                     out_info = gr.Markdown()
             btn.click(classify, [inp, model_dd, method_rb, compare], [out_label, out_vis, out_vis2, out_info, last_cls])
         with gr.Tab("Complementary scenes (synthetic)"):
-            gr.Markdown("Generate complementary scenes: shows offline-generated MaskGen images for the last predicted "
-                        "class and the class the model confuses it with. **Every image here is AI-generated.**")
+            gr.Markdown("Shows offline-generated MaskGen training scenes for a class and for the class the model confuses "
+                        "it with most, so you can compare them. **Every image here is AI-generated.**")
             with gr.Row():
                 cls_dd = gr.Dropdown([None] + CLASSES, value=None, label="Class (empty = last prediction)")
                 gen_btn = gr.Button("Generate complementary scenes", variant="primary")
             gal_note = gr.Markdown()
-            gal = gr.Gallery(columns=4, height="auto", label="SYNTHETIC — TA-TiTok + MaskGen")
-            gen_btn.click(lambda c, last: complementary(c or last), [cls_dd, last_cls], [gal, gal_note])
+            head1 = gr.Markdown()
+            gal1 = gr.Gallery(columns=4, height="auto", show_label=False)
+            head2 = gr.Markdown()
+            gal2 = gr.Gallery(columns=4, height="auto", show_label=False)
+            gen_btn.click(lambda c, last: complementary(c or last), [cls_dd, last_cls], [gal1, gal2, gal_note, head1, head2])
         with gr.Tab("Results"):
             gr.Markdown(results_md())
             shift_figs = sorted(p.name for p in FIG_DIR.glob(f"confusion_shift_*_vs_{ARGS.sota}*.png")) if FIG_DIR.exists() else []
@@ -228,7 +246,7 @@ def build_ui():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--sota", default="vit_real_syn")
+    ap.add_argument("--sota", default="vit_real_synf")
     ap.add_argument("--baseline", default="baseline_resnet18")
     ap.add_argument("--share", action="store_true")
     ap.add_argument("--port", type=int, default=7860)

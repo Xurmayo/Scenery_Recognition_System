@@ -23,13 +23,20 @@ def read_rows(split=None):
     return [r for r in rows if split is None or r["split"] == split]
 
 
-def synthetic_rows(frac=1.0, seed=0, classes=None):
+def synthetic_rows(frac=1.0, seed=0, classes=None, drop_rejected=False):
     if frac <= 0 or not Path(SYNTH_META).exists():
         return []
     with open(SYNTH_META) as f:
         rows = [dict(r, split="train", source="synthetic") for r in csv.DictReader(f)]
     classes = set(classes or CLASSES)  # ignores images of classes no longer in config.CLASSES
     rows = [r for r in rows if (ROOT / r["path"]).exists() and r["label"] in classes]
+    quality = Path(SYNTH_META).parent / "synthetic_quality.csv"
+    if drop_rejected:
+        if not quality.exists():
+            raise SystemExit("--filter-synthetic needs data/synthetic/synthetic_quality.csv: run scripts/filter_synthetic.py first")
+        with open(quality) as f:
+            rejected = {q["path"] for q in csv.DictReader(f) if q["quality"] == "reject"}
+        rows = [r for r in rows if r["path"] not in rejected]
     rng = random.Random(seed)
     rng.shuffle(rows)
     return rows[: int(round(len(rows) * frac))]
