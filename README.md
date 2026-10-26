@@ -6,10 +6,11 @@ shows *why* the model made each prediction.
 Six scene classes: **bedroom, kitchen, office** (indoor) and **park, parking lot, street** (outdoor).
 
 > Computer Vision — Assignment 2 (Advanced track: scene classification).
-> SOTA component: TA-TiTok + MaskGen (ByteDance & POSTECH, 2025) for synthetic gap-filling.
+> SOTA component: TA-TiTok + MaskGen (ByteDance & POSTECH, 2025) for synthetic gap-filling
+> ([paper](https://arxiv.org/abs/2501.07730), [Neurohive summary](https://neurohive.io/en/state-of-the-art/bytedance-unveil-ta-titok-tokenizer-achieving-sota-in-text-to-image-generation-using-only-public-data/)).
 
 ![Explanation gallery](figures/explain_gallery.png)
-*Grad-CAM of the CNN baseline vs Grad-CAM and attention rollout of the ViT on Places365 test images.*
+*Grad-CAM of the CNN baseline vs Grad-CAM and attention rollout of the ViT on in-the-wild test photos.*
 
 ---
 
@@ -58,7 +59,14 @@ Places365 (6 classes) ──► ResNet-18 baseline ──► per-class F1 ──
 | **Total** | **360** | **90** | **150** | **79** | **601** |
 
 The synthetic share of the training set is 62.5% when all generated images are used. The in-the-wild set mixes own
-photos and web images (test-only, never trained on), with many in hard conditions.
+photos and web images, with many in hard conditions; it is never used for training.
+
+**Why so small?** Each class has only 60 real training images on purpose: synthetic data is meant to help most in a
+low-data setting, and a small set also keeps every training run at 2–4 minutes, which made 3-seed repeats possible.
+The flip side is noisy test numbers (one Places365 test image = 0.7 points, one in-the-wild image = 1.3 points).
+
+**Baseline.** The ResNet-18 trained on the same real data plays the role of the Assignment 1 baseline (a standard
+ImageNet-pretrained CNN, no synthetic data); all improvements are measured against it.
 
 ### Main comparison (single run, seed 42)
 
@@ -115,6 +123,13 @@ Bedroom, kitchen and park images were essentially all on-class.
 - **Hard pairs:** street ↔ parking lot (cars and asphalt) and office ↔ kitchen (counters, desks, appliances).
 - **Seed noise is large:** the same configuration ranges from 0.887 to 0.920 test accuracy, so single-run comparisons
   (like 50% vs 100% synthetic) should not be over-interpreted.
+- **The test sets were also used to make design decisions.** No test image was ever trained on, but the choice of the
+  final configuration (filtered synthetic data) was made after looking at results on both test sets, and the
+  parking-lot class and its prompts were revised during the project. Both test sets therefore act partly as
+  validation sets, and the reported numbers are likely slightly optimistic. A fresh, untouched test set would be needed
+  for a fully unbiased estimate.
+- **Headline numbers, stated carefully:** Places365 test accuracy 91.8% (mean of 3 seeds), in-the-wild accuracy 96.6%.
+  The single best in-the-wild score (98.7%, 78 of 79) comes from one seed and should not be quoted as the result.
 
 ### Explainability
 
@@ -139,12 +154,17 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
 ```
 
-**Run the demo** (after training, or with your own weights in `runs/`):
+**Run the demo right after cloning.** The final and baseline models are bundled in `weights/` (half precision,
+same accuracy), together with example photos and quality-checked synthetic samples in `assets/`. No data download or
+training is needed:
 
 ```bash
 python app.py            # http://127.0.0.1:7860
 python app.py --share    # temporary public link, e.g. to use a phone camera
 ```
+
+After you train your own models, the app uses `runs/<run>/best.pt` instead; `python scripts/export_release.py`
+refreshes `weights/` and `assets/` from them.
 
 **Reproduce everything:** `run_all.bat` (Windows) or `bash run_all.sh` (Linux/macOS), or step by step:
 
@@ -173,8 +193,8 @@ python make_figures.py                                                  # tables
 
 **Own test photos:** put them in `data/own/<class>/` before running `prepare_data.py`. They become the in-the-wild test set.
 
-Model weights (`runs/*/best.pt`), datasets and the MaskGen repo are not stored in this repository; the commands above
-recreate them. Training each model takes 2–4 minutes on a laptop GPU.
+Full-precision checkpoints (`runs/*/best.pt`), the datasets and the MaskGen repo are not stored in this repository;
+the commands above recreate them. Training each model takes 2–4 minutes on a laptop GPU.
 
 ## Repository layout
 
@@ -186,10 +206,13 @@ config.py                    classes, paths, model names
 scripts/prepare_data.py      Places365 subset + own photos -> data/manifest.csv
 scripts/generate_maskgen.py  TA-TiTok + MaskGen synthetic scene generation
 scripts/filter_synthetic.py  quality check: rejects synthetic images that don't look like their class
+scripts/export_release.py    packs weights/ and assets/ so the app runs right after cloning
 src/data.py                  datasets and augmentation
 src/models.py                model creation, checkpoints
 src/explain.py               Grad-CAM (CNN and ViT), attention rollout
 src/watermark.py             visible SYNTHETIC label
+weights/                     final + baseline models (half precision) used by the app after a fresh clone
+assets/                      example photos and quality-checked synthetic samples for the app
 figures/                     result tables and figures
 runs/<run>/                  metrics.json, training curves, confusion matrices per run
 ```
@@ -206,13 +229,15 @@ runs/<run>/                  metrics.json, training curves, confusion matrices p
 - **Bias.** Places365 is skewed toward Western scenes, so local streets and parking lots may be misclassified;
   MaskGen inherits the biases of its open web training data. The model knows only 6 classes and forces every photo into
   one of them (for example, indoor parking garages are out of scope).
-- **Licences.** Places365 and the MaskGen weights are released for research and education.
+- **Licences.** Places365 and the MaskGen weights are released for research and education. Places365 images were
+  collected from the web and some carry third-party watermarks; the in-the-wild set also contains web images. They are
+  used here only for non-commercial evaluation. Report figures use own photos where possible.
 
 ## References
 
 - D. Kim, J. He, Q. Yu, C. Yang, X. Shen, S. Kwak, L.-C. Chen. *Democratizing Text-to-Image Masked Generative Models with
   Compact Text-Aware One-Dimensional Tokens.* arXiv:2501.07730, 2025. Code: github.com/bytedance/1d-tokenizer.
-  Summary: Neurohive, "ByteDance Unveil TA-TiTok Tokenizer Achieving SOTA in Text-to-Image Generation Using Only Public Data".
+  Summary: Neurohive, ["ByteDance Unveil TA-TiTok Tokenizer Achieving SOTA in Text-to-Image Generation Using Only Public Data"](https://neurohive.io/en/state-of-the-art/bytedance-unveil-ta-titok-tokenizer-achieving-sota-in-text-to-image-generation-using-only-public-data/).
 - B. Zhou et al. *Places: A 10 Million Image Database for Scene Recognition.* TPAMI, 2017.
 - A. Steiner et al. *How to Train Your ViT? Data, Augmentation, and Regularization in Vision Transformers.* 2021.
 - R. R. Selvaraju et al. *Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization.* ICCV, 2017.

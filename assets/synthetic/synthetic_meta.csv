@@ -1,0 +1,25 @@
+path,label,prompt,model,seed,guidance
+assets/synthetic/bedroom/SYN_bedroom_0000.png,bedroom,"A photo of a cozy attic bedroom with a slanted ceiling, photographed from a low angle.",TA-TiTok + MaskGen-VQ-L,0,12.0
+assets/synthetic/bedroom/SYN_bedroom_0002.png,bedroom,"A photo of a child's bedroom with toys on the floor, photographed from a low angle.",TA-TiTok + MaskGen-VQ-L,0,12.0
+assets/synthetic/bedroom/SYN_bedroom_0006.png,bedroom,"A photo of a hotel bedroom with two beds, wide-angle photo.",TA-TiTok + MaskGen-VQ-L,4,12.0
+assets/synthetic/bedroom/SYN_bedroom_0008.png,bedroom,"A photo of a bedroom with a double bed and nightstands, wide-angle photo.",TA-TiTok + MaskGen-VQ-L,8,12.0
+assets/synthetic/kitchen/SYN_kitchen_0000.png,kitchen,"A photo of a restaurant-style steel kitchen, photographed from a low angle.",TA-TiTok + MaskGen-VQ-L,10000,12.0
+assets/synthetic/kitchen/SYN_kitchen_0006.png,kitchen,"A photo of a messy kitchen with dishes in the sink, photographed from the doorway.",TA-TiTok + MaskGen-VQ-L,10004,12.0
+assets/synthetic/kitchen/SYN_kitchen_0014.png,kitchen,"A photo of a rustic country kitchen, photographed from a low angle.",TA-TiTok + MaskGen-VQ-L,10012,12.0
+assets/synthetic/kitchen/SYN_kitchen_0024.png,kitchen,A photo of a messy kitchen with dishes in the sink.,TA-TiTok + MaskGen-VQ-L,10024,12.0
+assets/synthetic/office/SYN_office_0000.png,office,"A photo of an open-plan office with desks and computers, wide-angle photo.",TA-TiTok + MaskGen-VQ-L,20000,12.0
+assets/synthetic/office/SYN_office_0003.png,office,"A photo of an empty office cubicle, slightly blurry phone photo.",TA-TiTok + MaskGen-VQ-L,20000,12.0
+assets/synthetic/office/SYN_office_0005.png,office,A photo of an open-plan office with desks and computers.,TA-TiTok + MaskGen-VQ-L,20004,12.0
+assets/synthetic/office/SYN_office_0009.png,office,"A photo of a cluttered office desk with papers and monitors, overexposed photo.",TA-TiTok + MaskGen-VQ-L,20008,12.0
+assets/synthetic/park/SYN_park_0000.png,park,"A photo of a park playground surrounded by trees, overexposed photo.",TA-TiTok + MaskGen-VQ-L,30000,12.0
+assets/synthetic/park/SYN_park_0003.png,park,"A photo of a park with a fountain, in fog.",TA-TiTok + MaskGen-VQ-L,30000,12.0
+assets/synthetic/park/SYN_park_0012.png,park,"A photo of a park with a pond and benches, slightly blurry phone photo.",TA-TiTok + MaskGen-VQ-L,30012,12.0
+assets/synthetic/park/SYN_park_0037.png,park,A photo of a green lawn in a public park.,TA-TiTok + MaskGen-VQ-L,30036,12.0
+assets/synthetic/parking_lot/SYN_parking_lot_0000.png,parking_lot,A photo of a shopping mall parking lot with parked cars and light poles.,TA-TiTok + MaskGen-VQ-L,40000,12.0
+assets/synthetic/parking_lot/SYN_parking_lot_0004.png,parking_lot,"A photo of a shopping mall parking lot with parked cars and light poles, in winter with snow.",TA-TiTok + MaskGen-VQ-L,40004,12.0
+assets/synthetic/parking_lot/SYN_parking_lot_0006.png,parking_lot,"A photo of a supermarket parking lot with shopping carts, at night with street lights.",TA-TiTok + MaskGen-VQ-L,40004,12.0
+assets/synthetic/parking_lot/SYN_parking_lot_0010.png,parking_lot,"A photo of a parking lot next to an office building, in winter with snow.",TA-TiTok + MaskGen-VQ-L,40008,12.0
+assets/synthetic/street/SYN_street_0000.png,street,"A photo of a narrow old street with buildings, slightly blurry phone photo.",TA-TiTok + MaskGen-VQ-L,50000,12.0
+assets/synthetic/street/SYN_street_0002.png,street,"A photo of a wide avenue with traffic lights, at sunset with strong backlight.",TA-TiTok + MaskGen-VQ-L,50000,12.0
+assets/synthetic/street/SYN_street_0007.png,street,"A photo of a busy city street with cars and shops, in winter with snow.",TA-TiTok + MaskGen-VQ-L,50004,12.0
+assets/synthetic/street/SYN_street_0026.png,street,A photo of a quiet street with apartment blocks.,TA-TiTok + MaskGen-VQ-L,50024,12.0

@@ -120,14 +120,15 @@ def confusion_shift(runs, a, b, split="test"):
 
 
 def curves(runs):
-    fig, ax = plt.subplots(1, 2, figsize=(11, 3.8))
-    for name, m in runs.items():
-        h = m["history"]
-        ax[0].plot(range(1, len(h["val_f1"]) + 1), h["val_f1"], label=name)
-        ax[1].plot(range(1, len(h["train_loss"]) + 1), h["train_loss"], label=f"{name} train")
-        ax[1].plot(range(1, len(h["val_loss"]) + 1), h["val_loss"], linestyle="--", label=f"{name} val")
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    colors = plt.get_cmap("tab10").colors
+    for k, (name, m) in enumerate(runs.items()):
+        h, c = m["history"], colors[k % len(colors)]  # one colour per run, shared by its train and val lines
+        ax[0].plot(range(1, len(h["val_f1"]) + 1), h["val_f1"], color=c, label=name)
+        ax[1].plot(range(1, len(h["train_loss"]) + 1), h["train_loss"], color=c, label=name)
+        ax[1].plot(range(1, len(h["val_loss"]) + 1), h["val_loss"], color=c, linestyle="--")
     ax[0].set_title("Validation macro-F1"); ax[0].set_xlabel("epoch"); ax[0].set_ylim(0, 1); ax[0].legend(fontsize=8)
-    ax[1].set_title("Loss (solid = train, dashed = val)"); ax[1].set_xlabel("epoch"); ax[1].legend(fontsize=6, ncol=2)
+    ax[1].set_title("Loss (solid = train, dashed = val)"); ax[1].set_xlabel("epoch"); ax[1].legend(fontsize=8)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "val_f1_curves.png", dpi=150)
     plt.close(fig)
@@ -146,10 +147,12 @@ def per_class(runs):
     plt.close(fig)
 
 
-def explain_gallery(baseline, sota, per_class=1, seed=0):
+def explain_gallery(baseline, sota, per_class=1, seed=0, split="own_test"):
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    if not read_rows(split):
+        split = "test"
     rows_by_cls = {}
-    for r in read_rows("test"):
+    for r in read_rows(split):
         rows_by_cls.setdefault(r["label"], []).append(r)
     rng = random.Random(seed)
     picks = [r for c in CLASSES for r in rng.sample(rows_by_cls.get(c, []), min(per_class, len(rows_by_cls.get(c, []))))]
@@ -243,6 +246,8 @@ def main():
     ap.add_argument("--baseline", default="baseline_resnet18")
     ap.add_argument("--real", default="vit_real")
     ap.add_argument("--sota", default="vit_real_synf")
+    ap.add_argument("--gallery-split", default="own_test", choices=["own_test", "test"],
+                    help="images for explain_gallery.png (default: your own photos)")
     args = ap.parse_args()
     FIG_DIR.mkdir(exist_ok=True)
 
@@ -260,7 +265,7 @@ def main():
             for split in ["test", "own_test"]:
                 if split in runs[a] and split in runs[b]:
                     confusion_shift(runs, a, b, split)
-    explain_gallery(args.baseline, args.sota)
+    explain_gallery(args.baseline, args.sota, split=args.gallery_split)
     synthetic_grid()
     print(f"\nFigures written to {FIG_DIR}")
 

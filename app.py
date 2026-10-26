@@ -33,13 +33,16 @@ LAT = defaultdict(lambda: deque(maxlen=100))  # rolling inference latency per mo
 def load_models(names):
     models = {}
     for n in names:
-        ck = RUNS_DIR / n / "best.pt"
+        if n in models:
+            continue
+        ck, metrics_p = RUNS_DIR / n / "best.pt", RUNS_DIR / n / "metrics.json"
+        if not ck.exists():  # fresh clone: use the bundled half-precision copy
+            ck, metrics_p = ROOT / "weights" / f"{n}.pt", ROOT / "weights" / f"{n}.json"
         if not ck.exists():
             continue
         model, meta = load_checkpoint(ck, DEVICE)
         explainers = make_explainers(model, meta)
         tf = build_transforms(meta["mean"], meta["std"], meta["img_size"], train=False)
-        metrics_p = RUNS_DIR / n / "metrics.json"
         metrics = json.loads(metrics_p.read_text()) if metrics_p.exists() else {}
         models[n] = dict(model=model, meta=meta, explainers=explainers, tf=tf, metrics=metrics)
     return models
@@ -118,9 +121,10 @@ def classify(img, model_name, method, compare, request: gr.Request):
 
 # ---------- synthetic gallery ----------
 def synth_rows():
-    if not SYNTH_META.exists():
+    meta_csv = SYNTH_META if SYNTH_META.exists() else ROOT / "assets" / "synthetic" / "synthetic_meta.csv"
+    if not meta_csv.exists():
         return []
-    with open(SYNTH_META) as f:
+    with open(meta_csv) as f:
         rows = [r for r in csv.DictReader(f) if r["label"] in CLASSES and (ROOT / r["path"]).exists()]
     q = SYNTH_META.parent / "synthetic_quality.csv"
     if q.exists():
@@ -191,7 +195,7 @@ ETHICS = """
 
 ### Credits
 TA-TiTok + MaskGen — Kim et al., 2025 ([paper](https://arxiv.org/abs/2501.07730), [code](https://github.com/bytedance/1d-tokenizer)),
-summarised by Neurohive. ViT-S/16 (AugReg) via `timm`. Places365 — Zhou et al., 2017. Attention rollout — Abnar & Zuidema, 2020. Grad-CAM — Selvaraju et al., 2017.
+summarised by [Neurohive](https://neurohive.io/en/state-of-the-art/bytedance-unveil-ta-titok-tokenizer-achieving-sota-in-text-to-image-generation-using-only-public-data/). ViT-S/16 (AugReg) via `timm`. Places365 — Zhou et al., 2017. Attention rollout — Abnar & Zuidema, 2020. Grad-CAM — Selvaraju et al., 2017.
 """
 
 
@@ -211,8 +215,12 @@ def build_ui():
                                          info="Attention rollout is ViT-only; the CNN baseline always uses Grad-CAM")
                     compare = gr.Checkbox(value=len(names) > 1, label="Also show the other model's explanation")
                     btn = gr.Button("Classify", variant="primary")
-                    ex_dir = ROOT / "data" / "real" / "test"
-                    examples = [str(next((ex_dir / c).glob("*"))) for c in CLASSES if (ex_dir / c).exists() and any((ex_dir / c).iterdir())]
+                    examples = [str(ROOT / "assets" / "examples" / f"{c}.jpg") for c in CLASSES
+                                if (ROOT / "assets" / "examples" / f"{c}.jpg").exists()]
+                    if not examples:
+                        ex_dir = ROOT / "data" / "real" / "test"
+                        examples = [str(next((ex_dir / c).glob("*"))) for c in CLASSES
+                                    if (ex_dir / c).exists() and any((ex_dir / c).iterdir())]
                     if examples:
                         gr.Examples(examples, inputs=inp, label="Test images")
                 with gr.Column():
@@ -250,10 +258,14 @@ if __name__ == "__main__":
     ap.add_argument("--baseline", default="baseline_resnet18")
     ap.add_argument("--share", action="store_true")
     ap.add_argument("--port", type=int, default=7860)
+    ap.add_argument("--all-models", action="store_true", help="also load every other run in runs/")
     ARGS = ap.parse_args()
-    MODELS = load_models([ARGS.sota, ARGS.baseline] + [p.parent.name for p in sorted(RUNS_DIR.glob("*/best.pt"))])
+    names = [ARGS.sota, ARGS.baseline, "vit_real"]  # final, baseline, real-only ViT: a readable dropdown for the demo
+    if ARGS.all_models:
+        names += [p.parent.name for p in sorted(RUNS_DIR.glob("*/best.pt"))]
+    MODELS = load_models(names)
     if not MODELS:
-        raise SystemExit("No trained models in runs/. Run train.py first.")
+        raise SystemExit("No models found in runs/ or weights/. Train with train.py, or run scripts/export_release.py.")
     SYNTH = synth_rows()
     print(f"Loaded models: {list(MODELS)} on {DEVICE}; synthetic images: {len(SYNTH)}")
     build_ui().launch(server_name="0.0.0.0", server_port=ARGS.port, share=ARGS.share)
