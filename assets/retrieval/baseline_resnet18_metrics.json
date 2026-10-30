@@ -1,0 +1,12 @@
+{
+ "run": "baseline_resnet18",
+ "index_size": 360,
+ "embedding_dim": 512,
+ "random_baseline": 0.16666666666666669,
+ "test": {
+  "n": 150,
+  "P@1": 0.72,
+  "P@5": 0.7293333333333333,
+  "P@10": 0.722
+ }
+}

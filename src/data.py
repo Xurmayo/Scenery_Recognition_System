@@ -11,10 +11,17 @@ from torchvision import transforms as T
 from config import CLASSES, MANIFEST, ROOT, SYNTH_META
 
 
-def load_image(path):
+def load_image(path, max_side=None):
+    """RGB image upright. With max_side the picture is also shrunk so that its longer side is at most max_side;
+    JPEGs are then decoded at reduced size, which makes 12-50 megapixel phone photos cheap to open."""
     img = Image.open(path)
+    if max_side:
+        img.draft("RGB", (max_side, max_side))
     img = ImageOps.exif_transpose(img)  # phone photos come rotated otherwise
-    return img.convert("RGB")
+    img = img.convert("RGB")
+    if max_side:
+        img.thumbnail((max_side, max_side))
+    return img
 
 
 def read_rows(split=None):
