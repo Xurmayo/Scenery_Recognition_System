@@ -13,7 +13,6 @@ accuracy is unchanged.
 """
 import argparse
 import csv
-import json
 import shutil
 import sys
 from pathlib import Path
