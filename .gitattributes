@@ -1,0 +1,3 @@
+# Launchers must keep their own line endings on every machine (a .sh with CRLF or a .bat with LF breaks).
+*.sh  text eol=lf
+*.bat text eol=crlf

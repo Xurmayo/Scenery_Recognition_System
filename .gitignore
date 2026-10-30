@@ -12,4 +12,15 @@ runs/**/*.pt
 __pycache__/
 *.pyc
 .gradio/
+gradio/
 *.log
+
+# retrieval thumbnails of Places365 photos: rebuilt locally by scripts/build_retrieval_index.py, not redistributed
+assets/retrieval/thumbs/
+
+
+# ngrok token and domain for the fixed phone link (copy ngrok.env.example to .ngrok.env)
+.ngrok.env
+
+# ngrok program and config downloaded by pyngrok for the fixed phone link
+.ngrok/

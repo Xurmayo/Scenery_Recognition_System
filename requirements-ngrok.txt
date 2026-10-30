@@ -1,0 +1,2 @@
+# Extra package for the fixed phone link (ngrok tunnel started by app.py), see README "Phone access".
+pyngrok>=9
