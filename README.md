@@ -49,7 +49,7 @@ Places365 (6 classes) ──► ResNet-18 baseline ──► per-class F1 ──
 ## The web app
 
 `python app.py` (or `start_demo.bat` / `./start_demo.sh`, see [Phone access](#phone-access)) opens
-http://127.0.0.1:7860 with five tabs:
+http://127.0.0.1:7860 with five tabs (type this address into the browser; the `0.0.0.0` line in the terminal is not one):
 
 | Tab | What it does |
 |---|---|
@@ -285,6 +285,7 @@ How it works and what to keep in mind:
 | `PermissionError ... AppData\Local\ngrok` | Python is not allowed to create folders in the user profile on this setup. The app keeps ngrok's files in `.ngrok/` inside the project, so this should not appear any more; if a tool still needs a cache folder, point it to a writable one (for Hugging Face tools: `HF_HOME`). |
 | `Permission denied` on `ngrok-v3-stable-windows-amd64.zip` | Antivirus blocks the automatic download. Install ngrok from the Microsoft Store (the app finds it) or put `ngrok.exe` into `.ngrok/`. |
 | `The authtoken ... does not look like a proper ngrok authtoken` | `.ngrok.env` has a truncated token, spaces or quotes. Paste the full token right after `NGROK_AUTHTOKEN=`. |
+| Browser says `ERR_ADDRESS_INVALID` for `http://0.0.0.0:7860` | `0.0.0.0` only means "listen on all addresses" and is printed by Gradio; it is not a browser address. Open `http://127.0.0.1:7860` (the app prints it as "Open on this computer"). |
 | Phone shows an old layout | Close the installed app completely and open it again, or reload with a cache reset (Ctrl+F5). |
 | Similar scenes shows grey tiles | `data/` is missing; run `python scripts/prepare_data.py` once, then start the app (it builds the thumbnails). |
 

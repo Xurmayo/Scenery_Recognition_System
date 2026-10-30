@@ -437,5 +437,6 @@ if __name__ == "__main__":
     print(f"Loaded models: {list(MODELS)} on {DEVICE}; synthetic images: {len(SYNTH)}; retrieval indexes: {list(RETR)}")
     if ARGS.ngrok_domain:
         start_ngrok(ARGS.ngrok_domain, ARGS.port)
+    print(f"Open on this computer: http://127.0.0.1:{ARGS.port}", flush=True)  # 0.0.0.0 below is not a browser address
     build_ui().launch(server_name="0.0.0.0", server_port=ARGS.port, share=ARGS.share, head=MENU_HEAD,
                          favicon_path=str(ROOT / "assets" / "icon.png"), pwa=True)  # pwa: installable on a phone
